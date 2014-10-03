@@ -1,0 +1,25 @@
+// http://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create_deploy_docker_image.html
+{
+  "AWSEBDockerrunVersion": "1",
+  "Authentication": {
+    "Bucket": "my-bucket",
+    "Key": "mydockercfg"
+  },
+  "Image": {
+    // "Name": "quay.io/johndoe/image-test", # "specify an image in a private repository hosted by the third-party registry www.quay.io"
+    "Name": "janedoe/image",
+    "Update": "true"
+  },
+  "Ports": [
+    {
+      "ContainerPort": "1234"
+    }
+  ],
+  "Volumes": [
+    {
+      "HostDirectory": "/var/app/mydb",
+      "ContainerDirectory": "/etc/mysql"
+    }
+  ],
+  "Logging": "/var/log/nginx"
+}

@@ -1,0 +1,53 @@
+# Use phusion/passenger-full as base image. To make your builds reproducible, make
+# sure you lock down to a specific version, not to `latest`!
+# See https://github.com/phusion/passenger-docker/blob/master/Changelog.md for
+# a list of version numbers.
+FROM phusion/passenger-full:0.9.12
+# Or, instead of the 'full' variant, use one of these:
+# FROM phusion/passenger-ruby19:0.9.12
+# FROM phusion/passenger-ruby20:0.9.12
+# FROM phusion/passenger-ruby21:0.9.12
+# FROM phusion/passenger-nodejs:0.9.12
+# FROM phusion/passenger-customizable:0.9.12
+
+# Set correct environment variables.
+ENV HOME /root
+
+# # If you're using the 'customizable' variant, you need to explicitly opt-in
+# # for features. Uncomment the features you want:
+# #
+# #   Build system and git.
+# RUN /build/utilities.sh
+# #   Ruby support.
+# #RUN /build/ruby1.9.sh
+# #RUN /build/ruby2.0.sh
+# RUN /build/ruby2.1.sh
+# #   Python support.
+# RUN /build/python.sh
+# #   Node.js and Meteor support.
+# RUN /build/nodejs.sh
+
+# ...put your own build instructions here...
+ADD webapp.conf /etc/nginx/sites-enabled/webapp.conf
+RUN mkdir /home/app/webapp
+WORKDIR /home/app/webapp
+
+ADD Gemfile /home/app/webapp/Gemfile
+ADD Gemfile.lock /home/app/webapp/Gemfile.lock
+
+
+
+RUN rm -f /etc/service/nginx/down
+
+# Clean up APT when done.
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN bundle install --deployment
+
+ADD . /home/app/webapp
+
+CMD ["/sbin/my_init"]
+
+RUN echo "#!/bin/sh\nexit 0" > /usr/sbin/policy-rc.d
+
+EXPOSE 80
