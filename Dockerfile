@@ -1,62 +1,46 @@
-# Use phusion/passenger-full as base image. To make your builds reproducible, make
-# sure you lock down to a specific version, not to `latest`!
-# See https://github.com/phusion/passenger-docker/blob/master/Changelog.md for
-# a list of version numbers.
-FROM phusion/passenger-full:0.9.12
-# Or, instead of the 'full' variant, use one of these:
-# FROM phusion/passenger-ruby19:0.9.12
-# FROM phusion/passenger-ruby20:0.9.12
-# FROM phusion/passenger-ruby21:0.9.12
-# FROM phusion/passenger-nodejs:0.9.12
-# FROM phusion/passenger-customizable:0.9.12
+# === 1 ===
+FROM phusion/passenger-ruby21:0.9.12
+MAINTAINER Adit Saxena "a.saxena.email@gmail.com"
 
-# Set correct environment variables.
-ENV HOME /root
+# Add user so that container does not run as root
+RUN useradd -m deployer2312
+RUN echo "deployer2312:pwd-24132f342l;ka4" | chpasswd
+RUN usermod -s /bin/bash deployer2312
+RUN usermod -aG sudo deployer2312
+ENV HOME /home/deployer2312
+ENV HOSTNAME deployer2312
 
-# # If you're using the 'customizable' variant, you need to explicitly opt-in
-# # for features. Uncomment the features you want:
-# #
-# #   Build system and git.
-# RUN /build/utilities.sh
-# #   Ruby support.
-# #RUN /build/ruby1.9.sh
-# #RUN /build/ruby2.0.sh
-# RUN /build/ruby2.1.sh
-# #   Python support.
-# RUN /build/python.sh
-# #   Node.js and Meteor support.
-# RUN /build/nodejs.sh
+# ENV HOME /root
 
-# ...put your own build instructions here...
-ADD webapp.conf /etc/nginx/sites-enabled/webapp.conf
-RUN mkdir /home/app/webapp
-WORKDIR /home/app/webapp
+CMD ["/sbin/my_init"]
 
-ADD Gemfile /home/app/webapp/Gemfile
-ADD Gemfile.lock /home/app/webapp/Gemfile.lock
-
+# === 2 ===
 RUN rm -f /etc/service/nginx/down
+
+# === 3 ====
+RUN rm /etc/nginx/sites-enabled/default
+
+# Add the nginx info
+ADD webapp.conf /etc/nginx/sites-enabled/webapp.conf
+
+# === 4 ===
+# Prepare folders
+RUN mkdir /home/app/webapp
+
+# === 5 ===
+# Run Bundle in a cache efficient way
+WORKDIR /tmp
+ADD Gemfile /tmp/
+ADD Gemfile.lock /tmp/
+RUN bundle install
+
+# === 6 ===
+# Add the rails app
+ADD . /home/app/webapp
 
 # Clean up APT when done.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN bundle install --deployment
+RUN echo 'root:pwd-24132f342l;ka4' |chpasswd
 
-ADD . /home/app/webapp
-RUN bundle exec rake assets:precompile --trace
-RUN touch /home/app/webapp/log/production.log && chmod 0666 /home/app/webapp/log/production.log
-
-CMD ["/sbin/my_init"]
-
-RUN echo "#!/bin/sh\nexit 0" > /usr/sbin/policy-rc.d
-
-EXPOSE 80
-
-# Usage:
-# docker build --tag=testapp .
-# docker run -p 80:80 testapp
-# docker run testapp tail -f /home/app/webapp/log/production.log
-
-
-# Force emoval of all images:
-# docker ps -a | grep Exit | awk '{print $1}' | xargs docker rm
+EXPOSE 80 22
