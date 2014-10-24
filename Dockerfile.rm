@@ -1,4 +1,6 @@
-FROM phusion/passenger-full:0.9.14
+FROM phusion/passenger-ruby21:0.9.12
+MAINTAINER Adit Saxena "a.saxena.email@gmail.com"
+
 ENV HOME /root
 
 CMD ["/sbin/my_init"]
@@ -7,14 +9,13 @@ RUN rm -f /etc/service/nginx/down
 RUN rm /etc/nginx/sites-enabled/default
 ADD webapp.conf /etc/nginx/sites-enabled/webapp.conf
 
-RUN mkdir -p /home/app/webapp
+RUN mkdir /home/app/webapp
 
 WORKDIR /tmp
 ADD Gemfile /tmp/
 ADD Gemfile.lock /tmp/
 RUN bundle install
 
-RUN mkdir -p /home/app/webapp
 ADD . /home/app/webapp
 
 RUN cd /home/app/webapp && RAILS_ENV=production rake assets:precompile
