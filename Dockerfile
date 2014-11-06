@@ -34,4 +34,9 @@ RUN cd /home/app/webapp && RAILS_ENV=production rake assets:precompile
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# RUN adduser --home /home/deployer --disabled-password --gecos '' deployer
+# RUN adduser deployer sudo
+# RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+# USER deployer
+
 EXPOSE 80 22
